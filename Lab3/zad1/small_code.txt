@@ -1,0 +1,56 @@
+
+#include <linux/blkdev.h>
+#include <linux/pci.h>
+#include <linux/interrupt.h>
+#include <linux/delay.h>
+#include <linux/slab.h>
+#include <linux/lockdep.h>
+
+#include <scsi/scsi.h>
+#include <scsi/scsi_cmnd.h>
+#include <scsi/scsi_device.h>
+#include <scsi/scsi_host.h>
+#include <scsi/scsi_transport_fc.h>
+#include <scsi/fc/fc_fs.h>
+#include <linux/aer.h>
+#include <linux/crash_dump.h>
+#ifdef CONFIG_X86
+#include <asm/set_memory.h>
+#endif
+
+#include "lpfc_hw4.h"
+#include "lpfc_hw.h"
+#include "lpfc_sli.h"
+#include "lpfc_sli4.h"
+#include "lpfc_nl.h"
+#include "lpfc_disc.h"
+#include "lpfc.h"
+#include "lpfc_scsi.h"
+#include "lpfc_nvme.h"
+#include "lpfc_crtn.h"
+#include "lpfc_logmsg.h"
+#include "lpfc_compat.h"
+#include "lpfc_debugfs.h"
+#include "lpfc_vport.h"
+#include "lpfc_version.h"
+
+/* There are only four IOCB completion types. */
+typedef enum _lpfc_iocb_type {
+	LPFC_UNKNOWN_IOCB,
+	LPFC_UNSOL_IOCB,
+	LPFC_SOL_IOCB,
+	LPFC_ABORT_IOCB
+} lpfc_iocb_type;
+
+
+/* Provide function prototypes local to this module. */
+static int lpfc_sli_issue_mbox_s4(struct lpfc_hba *, LPFC_MBOXQ_t *,
+				  uint32_t);
+static int lpfc_sli4_read_rev(struct lpfc_hba *, LPFC_MBOXQ_t *,
+			      uint8_t *, uint32_t *);
+static struct lpfc_iocbq *lpfc_sli4_els_wcqe_to_rspiocbq(struct lpfc_hba *,
+							 struct lpfc_iocbq *);
+static void lpfc_sli4_send_seq_to_ulp(struct lpfc_vport *,
+				      struct hbq_dmabuf *);
+static void lpfc_sli4_handle_mds_loopback(struct lpfc_vport *vport,
+					  struct hbq_dmabuf *dmabuf);
